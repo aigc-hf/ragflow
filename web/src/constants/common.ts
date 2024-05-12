@@ -68,3 +68,25 @@ export const FileMimeTypeMap = {
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   mp4: 'video/mp4',
 };
+
+export const Domain = 'demo.ragflow.io';
+
+//#region file preview
+export const Images = [
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'bmp',
+  'tif',
+  'tiff',
+  'webp',
+  // 'svg',
+  'ico',
+];
+
+// Without FileViewer
+export const ExceptiveType = ['xlsx', 'xls', 'pdf', 'docx', ...Images];
+
+export const SupportedPreviewDocumentTypes = [...ExceptiveType];
+//#endregion

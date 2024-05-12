@@ -1,7 +1,9 @@
 import { defineConfig } from 'umi';
+import { appName } from './src/conf.json';
 import routes from './src/routes';
 
 export default defineConfig({
+  title: appName,
   outputPath: 'dist',
   // alias: { '@': './src' },
   npmClient: 'npm',
@@ -25,6 +27,7 @@ export default defineConfig({
     },
   },
   devtool: 'source-map',
+  copy: ['src/conf.json'],
   proxy: {
     '/v1': {
       target: 'http://123.60.95.134:9380/',

@@ -1,9 +1,14 @@
+import { Images } from '@/constants/common';
 import { api_host } from '@/utils/api';
-import FileViewer from 'react-file-viewer';
+import { Flex, Image } from 'antd';
 import { useParams, useSearchParams } from 'umi';
+import Docx from './docx';
 import Excel from './excel';
+import Pdf from './pdf';
 
 import styles from './index.less';
+
+// TODO: The interface returns an incorrect content-type for the SVG.
 
 const DocumentViewer = () => {
   const { id: documentId } = useParams();
@@ -11,16 +16,17 @@ const DocumentViewer = () => {
   const [currentQueryParameters] = useSearchParams();
   const ext = currentQueryParameters.get('ext');
 
-  const onError = (e: any) => {
-    console.error(e, 'error in file-viewer');
-  };
-
   return (
     <section className={styles.viewerWrapper}>
-      {ext === 'xlsx' && <Excel filePath={api}></Excel>}
-      {ext !== 'xlsx' && (
-        <FileViewer fileType={ext} filePath={api} onError={onError} />
+      {Images.includes(ext!) && (
+        <Flex className={styles.image} align="center" justify="center">
+          <Image src={api} preview={false}></Image>
+        </Flex>
       )}
+      {ext === 'pdf' && <Pdf url={api}></Pdf>}
+      {(ext === 'xlsx' || ext === 'xls') && <Excel filePath={api}></Excel>}
+
+      {ext === 'docx' && <Docx filePath={api}></Docx>}
     </section>
   );
 };

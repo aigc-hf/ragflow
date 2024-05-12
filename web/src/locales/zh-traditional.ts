@@ -468,6 +468,8 @@ export default {
       directory: '文件夾',
       local: '本地上傳',
       s3: 'S3 上傳',
+      preview: '預覽',
+      fileError: '文件錯誤',
     },
     footer: {
       profile: '“保留所有權利 @ react”',
