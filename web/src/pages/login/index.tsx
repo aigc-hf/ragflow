@@ -5,10 +5,8 @@ import { Button, Checkbox, Form, Input } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon, useNavigate } from 'umi';
-import RightPanel from './right-panel';
 
 import { Domain } from '@/constants/common';
-import styles from './index.less';
 
 const Login = () => {
   const [title, setTitle] = useState('login');
@@ -72,89 +70,96 @@ const Login = () => {
   };
 
   return (
-    <div className={styles.loginPage}>
-      <div className={styles.loginLeft}>
-        <div className={styles.leftContainer}>
-          <div className={styles.loginTitle}>
-            <div>{title === 'login' ? t('login') : t('register')}</div>
-            <span>
-              {title === 'login'
-                ? t('loginDescription')
-                : t('registerDescription')}
-            </span>
+      <div className="flex min-h-full flex-1 flex-col justify-center items-center px-6 py-12 lg:px-8">
+        <div
+            className="flex flex-col justify-center max-w-sm p-10 w-96 bg-white border border-b-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+          <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+            <img
+                className="mx-auto h-10 w-auto"
+                src="/logo.svg"
+                alt="AI研究院"
+            />
+            <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
+              {title === 'login' ? t('login') : t('register')}
+            </h2>
           </div>
 
-          <Form
-            form={form}
-            layout="vertical"
-            name="dynamic_rule"
-            style={{ maxWidth: 600 }}
-          >
-            <Form.Item
-              {...formItemLayout}
-              name="email"
-              label={t('emailLabel')}
-              rules={[{ required: true, message: t('emailPlaceholder') }]}
+          <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+            <Form
+                form={form}
+                layout="vertical"
+                name="dynamic_rule"
+                style={{maxWidth: 600}}
+                className="space-y-6"
             >
-              <Input size="large" placeholder={t('emailPlaceholder')} />
-            </Form.Item>
-            {title === 'register' && (
               <Form.Item
-                {...formItemLayout}
-                name="nickname"
-                label={t('nicknameLabel')}
-                rules={[{ required: true, message: t('nicknamePlaceholder') }]}
+                  {...formItemLayout}
+                  name="email"
+                  label={t('emailLabel')}
+                  rules={[{required: true, message: t('emailPlaceholder')}]}
               >
-                <Input size="large" placeholder={t('nicknamePlaceholder')} />
+                <Input
+                    size="large"
+                    placeholder={t('emailPlaceholder')}
+                />
               </Form.Item>
-            )}
-            <Form.Item
-              {...formItemLayout}
-              name="password"
-              label={t('passwordLabel')}
-              rules={[{ required: true, message: t('passwordPlaceholder') }]}
-            >
-              <Input.Password
-                size="large"
-                placeholder={t('passwordPlaceholder')}
-                onPressEnter={onCheck}
-              />
-            </Form.Item>
-            {title === 'login' && (
-              <Form.Item name="remember" valuePropName="checked">
-                <Checkbox> {t('rememberMe')}</Checkbox>
-              </Form.Item>
-            )}
-            <div>
-              {title === 'login' && (
-                <div>
-                  {t('signInTip')}
-                  <Button type="link" onClick={changeTitle}>
-                    {t('signUp')}
-                  </Button>
-                </div>
-              )}
               {title === 'register' && (
-                <div>
-                  {t('signUpTip')}
-                  <Button type="link" onClick={changeTitle}>
-                    {t('login')}
-                  </Button>
-                </div>
+                  <Form.Item
+                      {...formItemLayout}
+                      name="nickname"
+                      label={t('nicknameLabel')}
+                      rules={[{required: true, message: t('nicknamePlaceholder')}]}
+                  >
+                    <Input size="large" placeholder={t('nicknamePlaceholder')}/>
+                  </Form.Item>
               )}
-            </div>
-            <Button
-              type="primary"
-              block
-              size="large"
-              onClick={onCheck}
-              loading={signLoading}
-            >
-              {title === 'login' ? t('login') : t('continue')}
-            </Button>
-            {title === 'login' && (
-              <>
-                {/* <Button
+              <Form.Item
+                  {...formItemLayout}
+                  name="password"
+                  label={t('passwordLabel')}
+                  rules={[{required: true, message: t('passwordPlaceholder')}]}
+              >
+                <Input.Password
+                    size="large"
+                    placeholder={t('passwordPlaceholder')}
+                    onPressEnter={onCheck}
+                />
+              </Form.Item>
+              {title === 'login' && (
+                  <Form.Item name="remember" valuePropName="checked">
+                    <Checkbox> {t('rememberMe')}</Checkbox>
+                  </Form.Item>
+              )}
+              <div>
+                {title === 'login' && (
+                    <div>
+                      {t('signInTip')}
+                      <Button type="link" onClick={changeTitle}>
+                        {t('signUp')}
+                      </Button>
+                    </div>
+                )}
+                {title === 'register' && (
+                    <div>
+                      {t('signUpTip')}
+                      <Button type="link" onClick={changeTitle}>
+                        {t('login')}
+                      </Button>
+                    </div>
+                )}
+              </div>
+              <Button
+                  type="primary"
+                  block
+                  size="large"
+                  onClick={onCheck}
+                  loading={signLoading}
+              >
+                {title === 'login' ? t('login') : t('continue')}
+              </Button>
+              {title === 'login' && (
+                  <>
+                    {/* <Button
                   block
                   size="large"
                   onClick={toGoogle}
@@ -168,31 +173,28 @@ const Login = () => {
                     Sign in with Google
                   </div>
                 </Button> */}
-                {location.host === Domain && (
-                  <Button
-                    block
-                    size="large"
-                    onClick={toGoogle}
-                    style={{ marginTop: 15 }}
-                  >
-                    <div>
-                      <Icon
-                        icon="local:github"
-                        style={{ verticalAlign: 'middle', marginRight: 5 }}
-                      />
-                      Sign in with Github
-                    </div>
-                  </Button>
-                )}
-              </>
-            )}
-          </Form>
+                    {location.host === Domain && (
+                        <Button
+                            block
+                            size="large"
+                            onClick={toGoogle}
+                            style={{marginTop: 15}}
+                        >
+                          <div>
+                            <Icon
+                                icon="local:github"
+                                style={{verticalAlign: 'middle', marginRight: 5}}
+                            />
+                            Sign in with Github
+                          </div>
+                        </Button>
+                    )}
+                  </>
+              )}
+            </Form>
+          </div>
         </div>
       </div>
-      <div className={styles.loginRight}>
-        <RightPanel></RightPanel>
-      </div>
-    </div>
   );
 };
 

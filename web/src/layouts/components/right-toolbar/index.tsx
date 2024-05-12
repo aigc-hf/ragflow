@@ -1,5 +1,5 @@
 import { useTranslate } from '@/hooks/commonHooks';
-import { DownOutlined, GithubOutlined } from '@ant-design/icons';
+import { DownOutlined } from '@ant-design/icons';
 import { Dropdown, MenuProps, Space } from 'antd';
 import camelCase from 'lodash/camelCase';
 import React from 'react';
@@ -10,6 +10,7 @@ import { useChangeLanguage } from '@/hooks/logicHooks';
 import { useSelector } from 'umi';
 import styled from './index.less';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Circle = ({ children, ...restProps }: React.PropsWithChildren) => {
   return (
     <div {...restProps} className={styled.circle}>
