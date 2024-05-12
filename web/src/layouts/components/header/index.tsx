@@ -10,6 +10,7 @@ import { useLocation } from 'umi';
 import Toolbar from '../right-toolbar';
 
 import styles from './index.less';
+import title from '@/global'
 
 const { Header } = Layout;
 
@@ -57,7 +58,7 @@ const RagHeader = () => {
     >
       <Space size={12} onClick={handleLogoClick} className={styles.logoWrapper}>
         <Logo className={styles.appIcon}></Logo>
-        <span className={styles.appName}>RAGFlow</span>
+        <span className={styles.appName}>{title}</span>
       </Space>
       <Space size={[0, 8]} wrap>
         <Radio.Group

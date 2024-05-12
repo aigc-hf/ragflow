@@ -13,6 +13,7 @@ import localeData from 'dayjs/plugin/localeData';
 import weekday from 'dayjs/plugin/weekday';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import weekYear from 'dayjs/plugin/weekYear';
+import { matchRoutes } from "umi";
 
 dayjs.extend(customParseFormat);
 dayjs.extend(advancedFormat);
@@ -61,6 +62,17 @@ const RootProvider = ({ children }: React.PropsWithChildren) => {
     </ConfigProvider>
   );
 };
+
+// @ts-ignore
+export function onRouteChange({ clientRoutes, location}) {
+  console.log(location, "location")
+  // @ts-ignore
+  const route = matchRoutes(clientRoutes, location.pathname)?.pop().route;
+  if (route) {
+    // @ts-ignore
+    document.title = route.name || "AI研究院"
+  }
+}
 
 export function rootContainer(container: ReactNode) {
   return <RootProvider>{container}</RootProvider>;

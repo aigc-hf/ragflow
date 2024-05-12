@@ -39,7 +39,7 @@ export const fileIconMap = {
   xml: 'xml.svg',
 };
 
-export const LanguageList = ['English', 'Chinese', 'Traditional Chinese'];
+export const LanguageList = ['English', 'Chinese'];
 
 export const LanguageTranslationMap = {
   English: 'en',

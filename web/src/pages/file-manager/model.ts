@@ -142,6 +142,7 @@ const model: DvaModel<FileManagerModelState> = {
       return data.retcode;
     },
     *getDocumentFile({ payload = {} }, { call }) {
+      // @ts-ignore
       const ret = yield call(getDocumentFile, payload);
 
       return ret;

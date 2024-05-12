@@ -381,12 +381,12 @@ class User(DataBaseModel, UserMixin):
         null=False,
         help_text="email",
         index=True)
-    avatar = TextField(null=True, help_text="avatar base64 string")
+    avatar = LongTextField(null=True, help_text="avatar base64 string")
     language = CharField(
         max_length=32,
         null=True,
         help_text="English|Chinese",
-        default="English")
+        default="Chinese")
     color_schema = CharField(
         max_length=32,
         null=True,
@@ -568,7 +568,7 @@ class TenantLLM(DataBaseModel):
 
 class Knowledgebase(DataBaseModel):
     id = CharField(max_length=32, primary_key=True)
-    avatar = TextField(null=True, help_text="avatar base64 string")
+    avatar = LongTextField(null=True, help_text="avatar base64 string")
     tenant_id = CharField(max_length=32, null=False)
     name = CharField(
         max_length=128,
