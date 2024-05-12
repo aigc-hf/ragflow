@@ -18,10 +18,6 @@ const Circle = ({ children, ...restProps }: React.PropsWithChildren) => {
   );
 };
 
-const handleGithubCLick = () => {
-  window.open('https://github.com/infiniflow/ragflow', 'target');
-};
-
 const RightToolBar = () => {
   const { t } = useTranslate('common');
   const changeLanguage = useChangeLanguage();
@@ -47,12 +43,6 @@ const RightToolBar = () => {
             <DownOutlined />
           </Space>
         </Dropdown>
-        <Circle>
-          <GithubOutlined onClick={handleGithubCLick} />
-        </Circle>
-        {/* <Circle>
-          <MonIcon />
-        </Circle> */}
         <User></User>
       </Space>
     </div>
