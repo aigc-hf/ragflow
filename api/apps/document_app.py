@@ -154,7 +154,7 @@ def create():
 
 @manager.route('/list', methods=['GET'])
 @login_required
-def list():
+def list_docs():
     kb_id = request.args.get("kb_id")
     if not kb_id:
         return get_json_result(
@@ -250,13 +250,9 @@ def rm():
             if not tenant_id:
                 return get_data_error_result(retmsg="Tenant not found!")
 
-            ELASTICSEARCH.deleteByQuery(
-                Q("match", doc_id=doc.id), idxnm=search.index_name(tenant_id))
-
-            DocumentService.clear_chunk_num(doc_id)
             b, n = File2DocumentService.get_minio_address(doc_id=doc_id)
 
-            if not DocumentService.delete(doc):
+            if not DocumentService.remove_document(doc, tenant_id):
                 return get_data_error_result(
                     retmsg="Database error (Document removal)!")
 
@@ -322,9 +318,10 @@ def rename():
                 data=False,
                 retmsg="The extension of file can't be changed",
                 retcode=RetCode.ARGUMENT_ERROR)
-        if DocumentService.query(name=req["name"], kb_id=doc.kb_id):
-            return get_data_error_result(
-                retmsg="Duplicated document name in the same knowledgebase.")
+        for d in DocumentService.query(name=req["name"], kb_id=doc.kb_id):
+            if d.name == req["name"]:
+                return get_data_error_result(
+                    retmsg="Duplicated document name in the same knowledgebase.")
 
         if not DocumentService.update_by_id(
                 req["doc_id"], {"name": req["name"]}):
@@ -349,12 +346,8 @@ def get(doc_id):
         if not e:
             return get_data_error_result(retmsg="Document not found!")
 
-        informs = File2DocumentService.get_by_document_id(doc_id)
-        if not informs:
-            response = flask.make_response(MINIO.get(doc.kb_id, doc.location))
-        else:
-            e, file = FileService.get_by_id(informs[0].file_id)
-            response = flask.make_response(MINIO.get(file.parent_id, doc.location))
+        b,n = File2DocumentService.get_minio_address(doc_id=doc_id)
+        response = flask.make_response(MINIO.get(b, n))
 
         ext = re.search(r"\.([^.]+)$", doc.name)
         if ext:

@@ -25,6 +25,7 @@ export default {
       comingSoon: 'Coming Soon',
       download: 'Download',
       close: 'Close',
+      preview: 'Preview',
     },
     login: {
       login: 'Sign in',
@@ -381,6 +382,7 @@ export default {
       partialTitle: 'Partial Embed',
       extensionTitle: 'Chrome Extension',
       tokenError: 'Please create API Token first!',
+      searching: 'searching...',
     },
     setting: {
       profile: 'Profile',
@@ -494,7 +496,7 @@ export default {
       knowledgeBase: 'Knowledge Base',
       size: 'Size',
       action: 'Action',
-      addToKnowledge: 'Add to Knowledge Base',
+      addToKnowledge: 'Link to Knowledge Base',
       pleaseSelect: 'Please select',
       newFolder: 'New Folder',
       file: 'File',

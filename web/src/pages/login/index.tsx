@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon, useNavigate } from 'umi';
 
 import { Domain } from '@/constants/common';
+import styles from './index.less';
 
 const Login = () => {
   const [title, setTitle] = useState('login');

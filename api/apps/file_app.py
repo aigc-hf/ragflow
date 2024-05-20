@@ -165,7 +165,7 @@ def create():
 
 @manager.route('/list', methods=['GET'])
 @login_required
-def list():
+def list_files():
     pf_id = request.args.get("parent_id")
 
     keywords = request.args.get("keywords", "")
@@ -277,11 +277,7 @@ def rm():
                 tenant_id = DocumentService.get_tenant_id(doc_id)
                 if not tenant_id:
                     return get_data_error_result(retmsg="Tenant not found!")
-                ELASTICSEARCH.deleteByQuery(
-                    Q("match", doc_id=doc.id), idxnm=search.index_name(tenant_id))
-                DocumentService.increment_chunk_num(
-                    doc.id, doc.kb_id, doc.token_num * -1, doc.chunk_num * -1, 0)
-                if not DocumentService.delete(doc):
+                if not DocumentService.remove_document(doc, tenant_id):
                     return get_data_error_result(
                         retmsg="Database error (Document removal)!")
             File2DocumentService.delete_by_file_id(file_id)
@@ -306,9 +302,10 @@ def rename():
                 data=False,
                 retmsg="The extension of file can't be changed",
                 retcode=RetCode.ARGUMENT_ERROR)
-        if FileService.query(name=req["name"], pf_id=file.parent_id):
-            return get_data_error_result(
-                retmsg="Duplicated file name in the same folder.")
+        for file in FileService.query(name=req["name"], pf_id=file.parent_id):
+            if file.name == req["name"]:
+                return get_data_error_result(
+                    retmsg="Duplicated file name in the same folder.")
 
         if not FileService.update_by_id(
                 req["file_id"], {"name": req["name"]}):
