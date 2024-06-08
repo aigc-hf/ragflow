@@ -91,15 +91,12 @@ export default {
       processDuration: '过程持续时间',
       progressMsg: '进度消息',
       testingDescription: '最后一步！ 成功后，剩下的就交给Infiniflow AI吧。',
-      topK: 'Top K',
-      topKTip:
-        '对于计算成本，并非所有检索到的块都会计算与查询的向量余弦相似度。 Top K越大，召回率越高，检索速度越慢。',
       similarityThreshold: '相似度阈值',
       similarityThresholdTip:
         '我们使用混合相似度得分来评估两行文本之间的距离。 它是加权关键词相似度和向量余弦相似度。 如果查询和块之间的相似度小于此阈值，则该块将被过滤掉。',
-      vectorSimilarityWeight: '向量相似度权重',
+      vectorSimilarityWeight: '关键字相似度权重',
       vectorSimilarityWeightTip:
-        '我们使用混合相似度得分来评估两行文本之间的距离。 它是加权关键词相似度和向量余弦相似度。 两个权重之和为 1.0。',
+        '我们使用混合相似性评分来评估两行文本之间的距离。它是加权关键字相似性和矢量余弦相似性或rerank得分（0〜1）。两个权重的总和为1.0。',
       testText: '测试文本',
       testTextPlaceholder: '请输入您的问题！',
       testingLabel: '测试',
@@ -140,6 +137,11 @@ export default {
       chunk: '解析块',
       bulk: '批量',
       cancel: '取消',
+      rerankModel: 'Rerank模型',
+      rerankPlaceholder: '请选择',
+      rerankTip: `如果是空的。它使用查询和块的嵌入来构成矢量余弦相似性。否则，它使用rerank评分代替矢量余弦相似性。`,
+      topK: 'Top-K',
+      topKTip: `K块将被送入Rerank型号。`,
     },
     knowledgeConfiguration: {
       titleDescription: '在这里更新您的知识库详细信息，尤其是解析方法。',
@@ -255,6 +257,25 @@ export default {
       </p><p>
       如果你要总结的东西需要一篇文章的全部上下文，并且所选LLM的上下文长度覆盖了文档长度，你可以尝试这种方法。
       </p>`,
+      useRaptor: '使用召回增强RAPTOR策略',
+      useRaptorTip: '请参考 https://huggingface.co/papers/2401.18059',
+      prompt: '提示词',
+      promptMessage: '提示词是必填项',
+      promptText: `请总结以下段落。 小心数字，不要编造。 段落如下：
+      {cluster_content}
+以上就是你需要总结的内容。`,
+      maxToken: '最大token数',
+      maxTokenMessage: '最大token数是必填项',
+      threshold: '阈值',
+      thresholdMessage: '阈值是必填项',
+      maxCluster: '最大聚类数',
+      maxClusterMessage: '最大聚类数是必填项',
+      randomSeed: '随机种子',
+      randomSeedMessage: '随机种子是必填项',
+      promptTip: 'LLM提示用于总结。',
+      maxTokenTip: '用于汇总的最大token数。',
+      thresholdTip: '阈值越大，聚类越少。',
+      maxClusterTip: '最大聚类数。',
     },
     chunk: {
       chunk: '解析块',
@@ -346,6 +367,8 @@ export default {
         '这设置了模型输出的最大长度，以标记（单词或单词片段）的数量来衡量。',
       quote: '显示引文',
       quoteTip: '是否应该显示原文出处？',
+      selfRag: 'Self-RAG',
+      selfRagTip: '请参考: https://huggingface.co/papers/2310.11511',
       overview: '聊天 API',
       pv: '消息数',
       uv: '活跃用户数',
@@ -380,6 +403,7 @@ export default {
       model: '模型提供商',
       modelDescription: '在此设置模型参数和 API Key。',
       team: '团队',
+      system: '系统',
       logout: '登出',
       username: '用户名',
       usernameMessage: '请输入用户名',
@@ -426,6 +450,8 @@ export default {
       sequence2txtModel: 'Sequence2txt模型',
       sequence2txtModelTip:
         '所有新创建的知识库都将使用默认的 ASR 模型。 使用此模型将语音翻译为相应的文本。',
+      rerankModel: 'Rerank模型',
+      rerankModelTip: `默认的重读模型用于用户问题检索到重读块。`,
       workspace: '工作空间',
       upgrade: '升级',
       addLlmTitle: '添加 LLM',
@@ -438,6 +464,11 @@ export default {
       modelTypeMessage: '请输入模型类型！',
       baseUrlNameMessage: '请输入基础 Url！',
       ollamaLink: '如何集成 {{name}}',
+      volcModelNameMessage: '请输入模型名称！格式：{"模型名称":"EndpointID"}',
+      addVolcEngineAK: '火山 ACCESS_KEY',
+      volcAKMessage: '请输入VOLC_ACCESS_KEY',
+      addVolcEngineSK: '火山 SECRET_KEY',
+      volcSKMessage: '请输入VOLC_SECRET_KEY',
     },
     message: {
       registered: '注册成功',

@@ -1,7 +1,10 @@
 import omit from 'lodash/omit';
 import { RequestMethod } from 'umi-request';
 
-type Service<T extends string> = Record<T, (params: any) => any>;
+type Service<T extends string> = Record<
+  T,
+  (params?: any, urlAppendix?: string) => any
+>;
 
 const registerServer = <T extends string>(
   opt: Record<T, { url: string; method: string }>,
@@ -9,7 +12,7 @@ const registerServer = <T extends string>(
 ) => {
   const server: Service<T> = {} as Service<T>;
   for (let key in opt) {
-    server[key] = (params: any, urlAppendix?: string) => {
+    server[key] = (params?: any, urlAppendix?: string) => {
       let url = opt[key].url;
       const requestOptions = opt[key];
       if (urlAppendix) {

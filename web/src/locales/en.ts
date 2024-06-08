@@ -93,15 +93,12 @@ export default {
       progressMsg: 'Progress Msg',
       testingDescription:
         'Final step! After success, leave the rest to Infiniflow AI.',
-      topK: 'Top K',
-      topKTip:
-        "For the computaion cost, not all the retrieved chunk will be computed vector cosine similarity with query. The bigger the 'Top K' is, the higher the recall rate is, the slower the retrieval speed is.",
       similarityThreshold: 'Similarity threshold',
       similarityThresholdTip:
         "We use hybrid similarity score to evaluate distance between two lines of text. It's weighted keywords similarity and vector cosine similarity. If the similarity between query and chunk is less than this threshold, the chunk will be filtered out.",
-      vectorSimilarityWeight: 'Vector similarity weight',
+      vectorSimilarityWeight: 'Keywords similarity weight',
       vectorSimilarityWeightTip:
-        "We use hybrid similarity score to evaluate distance between two lines of text. It's weighted keywords similarity and vector cosine similarity. The sum of both weights is 1.0.",
+        " We use hybrid similarity score to evaluate distance between two lines of text. It's weighted keywords similarity and vector cosine similarity or rerank score(0~1). The sum of both weights is 1.0.",
       testText: 'Test text',
       testTextPlaceholder: 'Please input your question!',
       testingLabel: 'Testing',
@@ -143,6 +140,11 @@ export default {
       chunk: 'Chunk',
       bulk: 'Bulk',
       cancel: 'Cancel',
+      rerankModel: 'Rerank Model',
+      rerankPlaceholder: 'Please select',
+      rerankTip: `If it's empty. It uses embeddings of query and chunks to compuste vector cosine similarity. Otherwise, it uses rerank score in place of  vector cosine similarity.`,
+      topK: 'Top-K',
+      topKTip: `K chunks will be fed into rerank models.`,
     },
     knowledgeConfiguration: {
       titleDescription:
@@ -265,6 +267,26 @@ export default {
     </p><p>
     If you want to summarize something that needs all the context of an article and the selected LLM's context length covers the document length, you can try this method.
     </p>`,
+      useRaptor: 'Use RAPTOR to enhance retrieval',
+      useRaptorTip:
+        'Recursive Abstractive Processing for Tree-Organized Retrieval, please refer to https://huggingface.co/papers/2401.18059',
+      prompt: 'Prompt',
+      promptTip: 'LLM prompt used for summarization.',
+      promptMessage: 'Prompt is required',
+      promptText: `Please summarize the following paragraphs. Be careful with the numbers, do not make things up. Paragraphs as following:
+      {cluster_content}
+The above is the content you need to summarize.`,
+      maxToken: 'Max token',
+      maxTokenTip: 'Maximum token number for summarization.',
+      maxTokenMessage: 'Max token is required',
+      threshold: 'Threshold',
+      thresholdTip: 'The bigger the threshold is the less cluster will be.',
+      thresholdMessage: 'Threshold is required',
+      maxCluster: 'Max cluster',
+      maxClusterTip: 'Maximum cluster number.',
+      maxClusterMessage: 'Max cluster is required',
+      randomSeed: 'Random seed',
+      randomSeedMessage: 'Random seed is required',
     },
     chunk: {
       chunk: 'Chunk',
@@ -357,6 +379,8 @@ export default {
         'This sets the maximum length of the model’s output, measured in the number of tokens (words or pieces of words).',
       quote: 'Show Quote',
       quoteTip: 'Should the source of the original text be displayed?',
+      selfRag: 'Self-RAG',
+      selfRagTip: 'Please refer to: https://huggingface.co/papers/2310.11511',
       overview: 'Chat Bot API',
       pv: 'Number of messages',
       uv: 'Active user number',
@@ -393,6 +417,7 @@ export default {
       model: 'Model Providers',
       modelDescription: 'Set the model parameter and API Key here.',
       team: 'Team',
+      system: 'System',
       logout: 'Log out',
       username: 'Username',
       usernameMessage: 'Please input your username!',
@@ -444,6 +469,8 @@ export default {
       sequence2txtModel: 'Sequence2txt model',
       sequence2txtModelTip:
         'The default ASR model all the newly created knowledgebase will use. Use this model to translate voices to corresponding text.',
+      rerankModel: 'Rerank Model',
+      rerankModelTip: `The default rerank model is used to rerank chunks retrieved by users' questions.`,
       workspace: 'Workspace',
       upgrade: 'Upgrade',
       addLlmTitle: 'Add LLM',
@@ -456,6 +483,12 @@ export default {
       baseUrlNameMessage: 'Please input your base url!',
       vision: 'Does it support Vision?',
       ollamaLink: 'How to integrate {{name}}',
+      volcModelNameMessage:
+        'Please input your model name! Format: {"ModelName":"EndpointID"}',
+      addVolcEngineAK: 'VOLC ACCESS_KEY',
+      volcAKMessage: 'Please input your VOLC_ACCESS_KEY',
+      addVolcEngineSK: 'VOLC SECRET_KEY',
+      volcSKMessage: 'Please input your SECRET_KEY',
     },
     message: {
       registered: 'Registered!',
@@ -510,6 +543,7 @@ export default {
       preview: 'Preview',
       fileError: 'File error',
     },
+    flow: { cite: 'Cite', citeTip: 'citeTip' },
     footer: {
       profile: 'All rights reserved @ React',
     },

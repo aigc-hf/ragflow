@@ -24,7 +24,7 @@ export default {
       copied: '複製成功',
       comingSoon: '即將推出',
       download: '下載',
-      close: '关闭',
+      close: '關閉',
       preview: '預覽',
     },
     login: {
@@ -91,15 +91,12 @@ export default {
       processDuration: '過程持續時間',
       progressMsg: '進度消息',
       testingDescription: '最後一步！成功後，剩下的就交給Infiniflow AI吧。',
-      topK: 'top k',
-      topKTip:
-        '對於計算成本，並非所有檢索到的塊都會計算與查詢的向量餘弦相似度。Top K越大，召回率越高，檢索速度越慢。',
       similarityThreshold: '相似度閾值',
       similarityThresholdTip:
         '我們使用混合相似度得分來評估兩行文本之間的距離。它是加權關鍵詞相似度和向量餘弦相似度。如果查詢和塊之間的相似度小於此閾值，則該塊將被過濾掉。',
-      vectorSimilarityWeight: '向量相似度權重',
+      vectorSimilarityWeight: '關鍵字相似度權重',
       vectorSimilarityWeightTip:
-        '我們使用混合相似度得分來評估兩行文本之間的距離。它是加權關鍵詞相似度和向量餘弦相似度。兩個權重之和為 1.0。',
+        '我們使用混合相似性評分來評估兩行文本之間的距離。它是加權關鍵字相似性和矢量餘弦相似性或rerank得分（0〜1）。兩個權重的總和為1.0。',
       testText: '測試文本',
       testTextPlaceholder: '請輸入您的問題！',
       testingLabel: '測試',
@@ -139,6 +136,11 @@ export default {
       chunk: '解析塊',
       bulk: '批量',
       cancel: '取消',
+      rerankModel: 'rerank模型',
+      rerankPlaceholder: '請選擇',
+      rerankTip: `如果是空的。它使用查詢和塊的嵌入來構成矢量餘弦相似性。否則，它使用rerank評分代替矢量餘弦相似性。`,
+      topK: 'Top-K',
+      topKTip: `K塊將被送入Rerank型號。`,
     },
     knowledgeConfiguration: {
       titleDescription: '在這裡更新您的知識庫詳細信息，尤其是解析方法。',
@@ -238,6 +240,25 @@ export default {
         </p><p>
         如果你要總結的東西需要一篇文章的全部上下文，並且所選LLM的上下文長度覆蓋了文檔長度，你可以嘗試這種方法。
         </p>`,
+      useRaptor: '使用RAPTOR文件增強策略',
+      useRaptorTip: '請參考 https://huggingface.co/papers/2401.18059',
+      prompt: '提示詞',
+      promptMessage: '提示詞是必填項',
+      promptText: `请請總結以下段落。 小心數字，不要編造。 段落如下：
+      {cluster_content}
+以上就是你需要總結的內容。`,
+      maxToken: '最大token數',
+      maxTokenMessage: '最大token數是必填項',
+      threshold: '閾值',
+      thresholdMessage: '閾值是必填項',
+      maxCluster: '最大聚類數',
+      maxClusterMessage: '最大聚類數是必填項',
+      randomSeed: '隨機種子',
+      randomSeedMessage: '隨機種子是必填項',
+      promptTip: 'LLM提示用於總結。',
+      maxTokenTip: '用於匯總的最大token數。',
+      thresholdTip: '閾值越大，聚類越少。',
+      maxClusterTip: '最大聚類數。',
     },
     chunk: {
       chunk: '解析塊',
@@ -281,10 +302,10 @@ export default {
       knowledgeBasesMessage: '請選擇',
       knowledgeBasesTip: '選擇關聯的知識庫。',
       system: '系統',
-      systemInitialValue: `你是一个智能助手，请总结知识库的内容来回答问题，请列举知识库中的数据详细回答。当所有知识库内容都与问题无关时，你的回答必须包括“知识库中未找到您要的答案！”这句话。回答需要考虑聊天历史。
-          以下是知识库：
-          {knowledge}
-          以上是知识库。`,
+      systemInitialValue: `你是一個智能助手，請總結知識庫的內容來回答問題，請列舉知識庫中的數據詳細回答。當所有知識庫內容都與問題無關時，你的回答必須包括“知識庫中未找到您要的答案！”這句話。回答需要考慮聊天歷史。
+      以下是知識庫：
+      {knowledge}
+      以上是知識庫。`,
       systemMessage: '請輸入',
       systemTip:
         '當LLM回答問題時，你需要LLM遵循的說明，比如角色設計、答案長度和答案語言等。',
@@ -329,6 +350,8 @@ export default {
         '這設置了模型輸出的最大長度，以標記（單詞或單詞片段）的數量來衡量。',
       quote: '顯示引文',
       quoteTip: '是否應該顯示原文出處？',
+      selfRag: 'Self-RAG',
+      selfRagTip: '請參考: https://huggingface.co/papers/2310.11511',
       overview: '聊天 API',
       pv: '消息數',
       uv: '活躍用戶數',
@@ -364,6 +387,7 @@ export default {
       modelDescription: '在此設置模型參數和 API Key。',
       team: '團隊',
       logout: '登出',
+      system: '系統',
       username: '使用者名稱',
       usernameMessage: '請輸入用戶名',
       photo: '頭像',
@@ -409,6 +433,8 @@ export default {
       sequence2txtModel: 'sequence2Txt模型',
       sequence2txtModelTip:
         '所有新創建的知識庫都將使用默認的 ASR 模型。使用此模型將語音翻譯為相應的文本。',
+      rerankModel: 'rerank模型',
+      rerankModelTip: `默認的重讀模型用於用戶問題檢索到重讀塊。`,
       workspace: '工作空間',
       upgrade: '升級',
       addLlmTitle: '添加Llm',
@@ -420,7 +446,12 @@ export default {
       modelNameMessage: '請輸入模型名稱！',
       modelTypeMessage: '請輸入模型類型！',
       baseUrlNameMessage: '請輸入基礎 Url！',
-      ollamaLink: '如何集成Ollama',
+      ollamaLink: '如何集成 {{name}}',
+      volcModelNameMessage: '請輸入模型名稱！格式：{"模型名稱":"EndpointID"}',
+      addVolcEngineAK: '火山 ACCESS_KEY',
+      volcAKMessage: '請輸入VOLC_ACCESS_KEY',
+      addVolcEngineSK: '火山 SECRET_KEY',
+      volcSKMessage: '請輸入VOLC_SECRET_KEY',
     },
     message: {
       registered: '註冊成功',

@@ -38,10 +38,12 @@ import {
   useSubmitApiKey,
   useSubmitOllama,
   useSubmitSystemModelSetting,
+  useSubmitVolcEngine,
 } from './hooks';
 import styles from './index.less';
 import OllamaModal from './ollama-modal';
 import SystemModelSettingModal from './system-model-setting-modal';
+import VolcEngineModal from './volcengine-model';
 
 const IconMap = {
   'Tongyi-Qianwen': 'tongyi',
@@ -52,6 +54,9 @@ const IconMap = {
   Ollama: 'ollama',
   Xinference: 'xinference',
   DeepSeek: 'deepseek',
+  VolcEngine: 'volc_engine',
+  BaiChuan: 'baichuan',
+  Jina: 'jina',
 };
 
 const LlmIcon = ({ name }: { name: string }) => {
@@ -99,7 +104,9 @@ const ModelCard = ({ item, clickApiKey }: IModelCardProps) => {
           <Col span={12} className={styles.factoryOperationWrapper}>
             <Space size={'middle'}>
               <Button onClick={handleApiKeyClick}>
-                {isLocalLlmFactory(item.name) ? t('addTheModel') : 'API-Key'}
+                {isLocalLlmFactory(item.name) || item.name === 'VolcEngine'
+                  ? t('addTheModel')
+                  : 'API-Key'}
                 <SettingOutlined />
               </Button>
               <Button onClick={handleShowMoreClick}>
@@ -165,20 +172,33 @@ const UserSettingModel = () => {
     selectedLlmFactory,
   } = useSubmitOllama();
 
+  const {
+    volcAddingVisible,
+    hideVolcAddingModal,
+    showVolcAddingModal,
+    onVolcAddingOk,
+    volcAddingLoading,
+    selectedVolcFactory,
+  } = useSubmitVolcEngine();
+
   const handleApiKeyClick = useCallback(
     (llmFactory: string) => {
       if (isLocalLlmFactory(llmFactory)) {
         showLlmAddingModal(llmFactory);
+      } else if (llmFactory === 'VolcEngine') {
+        showVolcAddingModal('VolcEngine');
       } else {
         showApiKeyModal({ llm_factory: llmFactory });
       }
     },
-    [showApiKeyModal, showLlmAddingModal],
+    [showApiKeyModal, showLlmAddingModal, showVolcAddingModal],
   );
 
   const handleAddModel = (llmFactory: string) => () => {
     if (isLocalLlmFactory(llmFactory)) {
       showLlmAddingModal(llmFactory);
+    } else if (llmFactory === 'VolcEngine') {
+      showVolcAddingModal('VolcEngine');
     } else {
       handleApiKeyClick(llmFactory);
     }
@@ -270,6 +290,13 @@ const UserSettingModel = () => {
         loading={llmAddingLoading}
         llmFactory={selectedLlmFactory}
       ></OllamaModal>
+      <VolcEngineModal
+        visible={volcAddingVisible}
+        hideModal={hideVolcAddingModal}
+        onOk={onVolcAddingOk}
+        loading={volcAddingLoading}
+        llmFactory={selectedVolcFactory}
+      ></VolcEngineModal>
     </section>
   );
 };

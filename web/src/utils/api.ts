@@ -77,4 +77,17 @@ export default {
   createFolder: `${api_host}/file/create`,
   connectFileToKnowledge: `${api_host}/file2document/convert`,
   getFile: `${api_host}/file/get`,
+
+  // system
+  getSystemVersion: `${api_host}/system/version`,
+  getSystemStatus: `${api_host}/system/status`,
+
+  // flow
+  listTemplates: `${api_host}/canvas/templates`,
+  listCanvas: `${api_host}/canvas/list`,
+  getCanvas: `${api_host}/canvas/get`,
+  removeCanvas: `${api_host}/canvas/rm`,
+  setCanvas: `${api_host}/canvas/set`,
+  resetCanvas: `${api_host}/canvas/reset`,
+  runCanvas: `${api_host}/canvas/completion`,
 };

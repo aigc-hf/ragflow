@@ -20,8 +20,8 @@ from datetime import datetime, timedelta
 from flask import request, Response
 from flask_login import login_required, current_user
 
-from api.db import FileType, ParserType
-from api.db.db_models import APIToken, API4Conversation, Task
+from api.db import FileType, ParserType, FileSource
+from api.db.db_models import APIToken, API4Conversation, Task, File
 from api.db.services import duplicate_name
 from api.db.services.api_service import APITokenService, API4ConversationService
 from api.db.services.dialog_service import DialogService, chat
@@ -31,7 +31,7 @@ from api.db.services.file_service import FileService
 from api.db.services.knowledgebase_service import KnowledgebaseService
 from api.db.services.task_service import queue_tasks, TaskService
 from api.db.services.user_service import UserTenantService
-from api.settings import RetCode
+from api.settings import RetCode, retrievaler
 from api.utils import get_uuid, current_timestamp, datetime_format
 from api.utils.api_utils import server_error_response, get_data_error_result, get_json_result, validate_request
 from itsdangerous import URLSafeTimedSerializer
@@ -39,9 +39,6 @@ from itsdangerous import URLSafeTimedSerializer
 from api.utils.file_utils import filename_type, thumbnail
 from rag.utils.minio_conn import MINIO
 
-from rag.utils.es_conn import ELASTICSEARCH
-from rag.nlp import search
-from elasticsearch_dsl import Q
 
 def generate_confirmation_token(tenent_id):
     serializer = URLSafeTimedSerializer(tenent_id)
@@ -201,12 +198,18 @@ def completion():
             else: conv.reference[-1] = ans["reference"]
             conv.message[-1] = {"role": "assistant", "content": ans["answer"]}
 
+        def rename_field(ans):
+            for chunk_i in ans['reference'].get('chunks', []):
+                chunk_i['doc_name'] = chunk_i['docnm_kwd']
+                chunk_i.pop('docnm_kwd')
+
         def stream():
             nonlocal dia, msg, req, conv
             try:
                 for ans in chat(dia, msg, True, **req):
                     fillin_conv(ans)
-                    yield "data:"+json.dumps({"retcode": 0, "retmsg": "", "data": ans}, ensure_ascii=False) + "\n\n"
+                    rename_field(ans)
+                    yield "data:" + json.dumps({"retcode": 0, "retmsg": "", "data": ans}, ensure_ascii=False) + "\n\n"
                 API4ConversationService.append_message(conv.id, conv.to_dict())
             except Exception as e:
                 yield "data:" + json.dumps({"retcode": 500, "retmsg": str(e),
@@ -228,6 +231,11 @@ def completion():
                 fillin_conv(ans)
                 API4ConversationService.append_message(conv.id, conv.to_dict())
                 break
+
+            for chunk_i in answer['reference'].get('chunks',[]):
+                chunk_i['doc_name'] = chunk_i['docnm_kwd']
+                chunk_i.pop('docnm_kwd')
+
             return get_json_result(data=answer)
 
     except Exception as e:
@@ -242,7 +250,13 @@ def get(conversation_id):
         if not e:
             return get_data_error_result(retmsg="Conversation not found!")
 
-        return get_json_result(data=conv.to_dict())
+        conv = conv.to_dict()
+        for referenct_i in conv['reference']:
+            for chunk_i in referenct_i['chunks']:
+                if 'docnm_kwd' in chunk_i.keys():
+                    chunk_i['doc_name'] = chunk_i['docnm_kwd']
+                    chunk_i.pop('docnm_kwd')
+        return get_json_result(data=conv)
     except Exception as e:
         return server_error_response(e)
 
@@ -364,32 +378,206 @@ def list_chunks():
         return get_json_result(
             data=False, retmsg='Token is not valid!"', retcode=RetCode.AUTHENTICATION_ERROR)
 
-    form_data = request.form
+    req = request.json
 
     try:
-        if "doc_name" in form_data.keys():
-            tenant_id = DocumentService.get_tenant_id_by_name(form_data['doc_name'])
-            q = Q("match", docnm_kwd=form_data['doc_name'])
+        if "doc_name" in req.keys():
+            tenant_id = DocumentService.get_tenant_id_by_name(req['doc_name'])
+            doc_id = DocumentService.get_doc_id_by_doc_name(req['doc_name'])
 
-        elif "doc_id" in form_data.keys():
-            tenant_id = DocumentService.get_tenant_id(form_data['doc_id'])
-            q = Q("match", doc_id=form_data['doc_id'])
+        elif "doc_id" in req.keys():
+            tenant_id = DocumentService.get_tenant_id(req['doc_id'])
+            doc_id = req['doc_id']
         else:
             return get_json_result(
-                data=False,retmsg="Can't find doc_name or doc_id"
+                data=False, retmsg="Can't find doc_name or doc_id"
             )
 
-        res_es_search = ELASTICSEARCH.search(q,idxnm=search.index_name(tenant_id),timeout="600s")
-
-        res = [{} for _ in range(len(res_es_search['hits']['hits']))]
-
-        for index , chunk in enumerate(res_es_search['hits']['hits']):
-            res[index]['doc_name'] = chunk['_source']['docnm_kwd']
-            res[index]['content'] = chunk['_source']['content_with_weight']
-            if 'img_id' in chunk['_source'].keys():
-                res[index]['img_id'] = chunk['_source']['img_id']
+        res = retrievaler.chunk_list(doc_id=doc_id, tenant_id=tenant_id)
+        res = [
+            {
+                "content": res_item["content_with_weight"],
+                "doc_name": res_item["docnm_kwd"],
+                "img_id": res_item["img_id"]
+            } for res_item in res
+        ]
 
     except Exception as e:
         return server_error_response(e)
 
     return get_json_result(data=res)
+
+
+@manager.route('/list_kb_docs', methods=['POST'])
+# @login_required
+def list_kb_docs():
+    token = request.headers.get('Authorization').split()[1]
+    objs = APIToken.query(token=token)
+    if not objs:
+        return get_json_result(
+            data=False, retmsg='Token is not valid!"', retcode=RetCode.AUTHENTICATION_ERROR)
+
+    req = request.json
+    tenant_id = objs[0].tenant_id
+    kb_name = req.get("kb_name", "").strip()
+
+    try:
+        e, kb = KnowledgebaseService.get_by_name(kb_name, tenant_id)
+        if not e:
+            return get_data_error_result(
+                retmsg="Can't find this knowledgebase!")
+        kb_id = kb.id
+
+    except Exception as e:
+        return server_error_response(e)
+
+    page_number = int(req.get("page", 1))
+    items_per_page = int(req.get("page_size", 15))
+    orderby = req.get("orderby", "create_time")
+    desc = req.get("desc", True)
+    keywords = req.get("keywords", "")
+
+    try:
+        docs, tol = DocumentService.get_by_kb_id(
+            kb_id, page_number, items_per_page, orderby, desc, keywords)
+        docs = [{"doc_id": doc['id'], "doc_name": doc['name']} for doc in docs]
+
+        return get_json_result(data={"total": tol, "docs": docs})
+    
+    except Exception as e:
+        return server_error_response(e)
+
+
+@manager.route('/document', methods=['DELETE'])
+# @login_required
+def document_rm():
+    token = request.headers.get('Authorization').split()[1]
+    objs = APIToken.query(token=token)
+    if not objs:
+        return get_json_result(
+            data=False, retmsg='Token is not valid!"', retcode=RetCode.AUTHENTICATION_ERROR)
+
+    tenant_id = objs[0].tenant_id
+    req = request.json
+    doc_ids = []
+    try:
+        doc_ids = [DocumentService.get_doc_id_by_doc_name(doc_name) for doc_name in req.get("doc_names", [])]
+        for doc_id in req.get("doc_ids", []):
+            if doc_id not in doc_ids:
+                doc_ids.append(doc_id)
+
+        if not doc_ids:
+            return get_json_result(
+                data=False, retmsg="Can't find doc_names or doc_ids"
+            )
+
+    except Exception as e:
+        return server_error_response(e)
+
+    root_folder = FileService.get_root_folder(tenant_id)
+    pf_id = root_folder["id"]
+    FileService.init_knowledgebase_docs(pf_id, tenant_id)
+
+    errors = ""
+    for doc_id in doc_ids:
+        try:
+            e, doc = DocumentService.get_by_id(doc_id)
+            if not e:
+                return get_data_error_result(retmsg="Document not found!")
+            tenant_id = DocumentService.get_tenant_id(doc_id)
+            if not tenant_id:
+                return get_data_error_result(retmsg="Tenant not found!")
+
+            b, n = File2DocumentService.get_minio_address(doc_id=doc_id)
+
+            if not DocumentService.remove_document(doc, tenant_id):
+                return get_data_error_result(
+                    retmsg="Database error (Document removal)!")
+
+            f2d = File2DocumentService.get_by_document_id(doc_id)
+            FileService.filter_delete([File.source_type == FileSource.KNOWLEDGEBASE, File.id == f2d[0].file_id])
+            File2DocumentService.delete_by_document_id(doc_id)
+
+            MINIO.rm(b, n)
+        except Exception as e:
+            errors += str(e)
+
+    if errors:
+        return get_json_result(data=False, retmsg=errors, retcode=RetCode.SERVER_ERROR)
+
+    return get_json_result(data=True)
+
+
+@manager.route('/completion_aibotk', methods=['POST'])
+@validate_request("Authorization", "conversation_id", "word")
+def completion_faq():
+    import base64
+    req = request.json
+
+    token = req["Authorization"]
+    objs = APIToken.query(token=token)
+    if not objs:
+        return get_json_result(
+            data=False, retmsg='Token is not valid!"', retcode=RetCode.AUTHENTICATION_ERROR)
+
+    e, conv = API4ConversationService.get_by_id(req["conversation_id"])
+    if not e:
+        return get_data_error_result(retmsg="Conversation not found!")
+    if "quote" not in req: req["quote"] = True
+
+    msg = []
+    msg.append({"role": "user", "content": req["word"]})
+
+    try:
+        conv.message.append(msg[-1])
+        e, dia = DialogService.get_by_id(conv.dialog_id)
+        if not e:
+            return get_data_error_result(retmsg="Dialog not found!")
+        del req["conversation_id"]
+
+        if not conv.reference:
+            conv.reference = []
+        conv.message.append({"role": "assistant", "content": ""})
+        conv.reference.append({"chunks": [], "doc_aggs": []})
+
+        def fillin_conv(ans):
+            nonlocal conv
+            if not conv.reference:
+                conv.reference.append(ans["reference"])
+            else: conv.reference[-1] = ans["reference"]
+            conv.message[-1] = {"role": "assistant", "content": ans["answer"]}
+
+        data_type_picture = {
+            "type": 3,
+            "url": "base64 content"
+        }
+        data = [
+            {
+                "type": 1,
+                "content": ""
+            }
+        ]
+        ans = ""
+        for a in chat(dia, msg, stream=False, **req):
+            ans = a
+            break
+        data[0]["content"] += re.sub(r'##\d\$\$', '', ans["answer"])
+        fillin_conv(ans)
+        API4ConversationService.append_message(conv.id, conv.to_dict())
+
+        chunk_idxs = [int(match[2]) for match in re.findall(r'##\d\$\$', ans["answer"])]
+        for chunk_idx in chunk_idxs[:1]:
+            if ans["reference"]["chunks"][chunk_idx]["img_id"]:
+                try:
+                    bkt, nm = ans["reference"]["chunks"][chunk_idx]["img_id"].split("-")
+                    response = MINIO.get(bkt, nm)
+                    data_type_picture["url"] = base64.b64encode(response).decode('utf-8')
+                    data.append(data_type_picture)
+                except Exception as e:
+                    return server_error_response(e)
+
+        response = {"code": 200, "msg": "success", "data": data}
+        return response
+
+    except Exception as e:
+        return server_error_response(e)

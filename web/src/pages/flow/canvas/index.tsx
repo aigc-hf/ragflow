@@ -1,90 +1,104 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import ReactFlow, {
   Background,
   Controls,
-  Edge,
-  Node,
-  OnConnect,
-  OnEdgesChange,
-  OnNodesChange,
-  addEdge,
-  applyEdgeChanges,
-  applyNodeChanges,
+  MarkerType,
+  NodeMouseHandler,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { useHandleDrop } from '../hooks';
+import { NodeContextMenu, useHandleNodeContextMenu } from './context-menu';
+import { ButtonEdge } from './edge';
+
+import FlowDrawer from '../flow-drawer';
+import {
+  useHandleDrop,
+  useHandleKeyUp,
+  useSelectCanvasData,
+  useShowDrawer,
+} from '../hooks';
 import { TextUpdaterNode } from './node';
+
+import styles from './index.less';
 
 const nodeTypes = { textUpdater: TextUpdaterNode };
 
-const initialNodes = [
-  {
-    id: 'node-1',
-    type: 'textUpdater',
-    position: { x: 200, y: 50 },
-    data: { value: 123 },
-  },
-  {
-    id: '1',
-    data: { label: 'Hello' },
-    position: { x: 0, y: 0 },
-    type: 'input',
-  },
-  {
-    id: '2',
-    data: { label: 'World' },
-    position: { x: 100, y: 100 },
-  },
-];
+const edgeTypes = {
+  buttonEdge: ButtonEdge,
+};
 
-const initialEdges = [
-  { id: '1-2', source: '1', target: '2', label: 'to the', type: 'step' },
-];
+interface IProps {
+  sideWidth: number;
+}
 
-function FlowCanvas() {
-  const [nodes, setNodes] = useState<Node[]>(initialNodes);
-  const [edges, setEdges] = useState<Edge[]>(initialEdges);
+function FlowCanvas({ sideWidth }: IProps) {
+  const {
+    nodes,
+    edges,
+    onConnect,
+    onEdgesChange,
+    onNodesChange,
+    onSelectionChange,
+  } = useSelectCanvasData();
 
-  const onNodesChange: OnNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    [],
-  );
-  const onEdgesChange: OnEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [],
+  const { ref, menu, onNodeContextMenu, onPaneClick } =
+    useHandleNodeContextMenu(sideWidth);
+  const { drawerVisible, hideDrawer, showDrawer, clickedNode } =
+    useShowDrawer();
+
+  const onNodeClick: NodeMouseHandler = useCallback(
+    (e, node) => {
+      showDrawer(node);
+    },
+    [showDrawer],
   );
 
-  const onConnect: OnConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [],
-  );
+  const { onDrop, onDragOver, setReactFlowInstance } = useHandleDrop();
 
-  const { handleDrop, allowDrop } = useHandleDrop(setNodes);
-
-  useEffect(() => {
-    console.info('nodes:', nodes);
-    console.info('edges:', edges);
-  }, [nodes, edges]);
+  const { handleKeyUp } = useHandleKeyUp();
 
   return (
-    <div
-      style={{ height: '100%', width: '100%' }}
-      onDrop={handleDrop}
-      onDragOver={allowDrop}
-    >
+    <div className={styles.canvasWrapper}>
       <ReactFlow
+        ref={ref}
         nodes={nodes}
         onNodesChange={onNodesChange}
+        onNodeContextMenu={onNodeContextMenu}
         edges={edges}
         onEdgesChange={onEdgesChange}
-        // fitView
+        fitView
         onConnect={onConnect}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onPaneClick={onPaneClick}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onNodeClick={onNodeClick}
+        onInit={setReactFlowInstance}
+        onKeyUp={handleKeyUp}
+        onSelectionChange={onSelectionChange}
+        nodeOrigin={[0.5, 0]}
+        onChange={(...params) => {
+          console.info('params:', ...params);
+        }}
+        defaultEdgeOptions={{
+          type: 'buttonEdge',
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          },
+        }}
       >
         <Background />
         <Controls />
+        {Object.keys(menu).length > 0 && (
+          <NodeContextMenu onClick={onPaneClick} {...(menu as any)} />
+        )}
       </ReactFlow>
+      <FlowDrawer
+        node={clickedNode}
+        visible={drawerVisible}
+        hideModal={hideDrawer}
+      ></FlowDrawer>
     </div>
   );
 }

@@ -20,7 +20,7 @@ from api.utils.api_utils import server_error_response, get_data_error_result, va
 from api.db import StatusEnum, LLMType
 from api.db.db_models import TenantLLM
 from api.utils.api_utils import get_json_result
-from rag.llm import EmbeddingModel, ChatModel
+from rag.llm import EmbeddingModel, ChatModel, RerankModel
 
 
 @manager.route('/factories', methods=['GET'])
@@ -28,7 +28,7 @@ from rag.llm import EmbeddingModel, ChatModel
 def factories():
     try:
         fac = LLMFactoriesService.get_all()
-        return get_json_result(data=[f.to_dict() for f in fac if f.name not in ["Youdao", "FastEmbed"]])
+        return get_json_result(data=[f.to_dict() for f in fac if f.name not in ["Youdao", "FastEmbed", "BAAI"]])
     except Exception as e:
         return server_error_response(e)
 
@@ -39,17 +39,18 @@ def factories():
 def set_api_key():
     req = request.json
     # test if api key works
-    chat_passed = False
+    chat_passed, embd_passed, rerank_passed = False, False, False
     factory = req["llm_factory"]
     msg = ""
     for llm in LLMService.query(fid=factory):
-        if llm.model_type == LLMType.EMBEDDING.value:
+        if not embd_passed and llm.model_type == LLMType.EMBEDDING.value:
             mdl = EmbeddingModel[factory](
                 req["api_key"], llm.llm_name, base_url=req.get("base_url"))
             try:
                 arr, tc = mdl.encode(["Test if the api key is available"])
                 if len(arr[0]) == 0 or tc == 0:
                     raise Exception("Fail")
+                embd_passed = True
             except Exception as e:
                 msg += f"\nFail to access embedding model({llm.llm_name}) using this api key." + str(e)
         elif not chat_passed and llm.model_type == LLMType.CHAT.value:
@@ -60,10 +61,21 @@ def set_api_key():
                                  "temperature": 0.9})
                 if not tc:
                     raise Exception(m)
-                chat_passed = True
             except Exception as e:
                 msg += f"\nFail to access model({llm.llm_name}) using this api key." + str(
                     e)
+            chat_passed = True
+        elif not rerank_passed and llm.model_type == LLMType.RERANK:
+            mdl = RerankModel[factory](
+                req["api_key"], llm.llm_name, base_url=req.get("base_url"))
+            try:
+                arr, tc = mdl.similarity("What's the weather?", ["Is it sunny today?"])
+                if len(arr) == 0 or tc == 0:
+                    raise Exception("Fail")
+            except Exception as e:
+                msg += f"\nFail to access model({llm.llm_name}) using this api key." + str(
+                    e)
+            rerank_passed = True
 
     if msg:
         return get_data_error_result(retmsg=msg)
@@ -96,16 +108,29 @@ def set_api_key():
 @validate_request("llm_factory", "llm_name", "model_type")
 def add_llm():
     req = request.json
+    factory = req["llm_factory"]
+    # For VolcEngine, due to its special authentication method
+    # Assemble volc_ak, volc_sk, endpoint_id into api_key
+    if factory == "VolcEngine":
+        temp = list(eval(req["llm_name"]).items())[0]
+        llm_name = temp[0]
+        endpoint_id = temp[1]
+        api_key = '{' + f'"volc_ak": "{req.get("volc_ak", "")}", ' \
+                        f'"volc_sk": "{req.get("volc_sk", "")}", ' \
+                        f'"ep_id": "{endpoint_id}", ' + '}'
+    else:
+        llm_name = req["llm_name"]
+        api_key = "xxxxxxxxxxxxxxx"
+
     llm = {
         "tenant_id": current_user.id,
-        "llm_factory": req["llm_factory"],
+        "llm_factory": factory,
         "model_type": req["model_type"],
-        "llm_name": req["llm_name"],
+        "llm_name": llm_name,
         "api_base": req.get("api_base", ""),
-        "api_key": "xxxxxxxxxxxxxxx"
+        "api_key": api_key
     }
 
-    factory = req["llm_factory"]
     msg = ""
     if llm["model_type"] == LLMType.EMBEDDING.value:
         mdl = EmbeddingModel[factory](
@@ -118,7 +143,10 @@ def add_llm():
             msg += f"\nFail to access embedding model({llm['llm_name']})." + str(e)
     elif llm["model_type"] == LLMType.CHAT.value:
         mdl = ChatModel[factory](
-            key=None, model_name=llm["llm_name"], base_url=llm["api_base"])
+            key=llm['api_key'] if factory == "VolcEngine" else None,
+            model_name=llm["llm_name"],
+            base_url=llm["api_base"]
+        )
         try:
             m, tc = mdl.chat(None, [{"role": "user", "content": "Hello! How are you doing!"}], {
                              "temperature": 0.9})
@@ -133,7 +161,6 @@ def add_llm():
 
     if msg:
         return get_data_error_result(retmsg=msg)
-
 
     if not TenantLLMService.filter_update(
             [TenantLLM.tenant_id == current_user.id, TenantLLM.llm_factory == factory, TenantLLM.llm_name == llm["llm_name"]], llm):
@@ -184,7 +211,7 @@ def list_app():
         llms = [m.to_dict()
                 for m in llms if m.status == StatusEnum.VALID.value]
         for m in llms:
-            m["available"] = m["fid"] in facts or m["llm_name"].lower() == "flag-embedding" or m["fid"] in ["Youdao","FastEmbed"]
+            m["available"] = m["fid"] in facts or m["llm_name"].lower() == "flag-embedding" or m["fid"] in ["Youdao","FastEmbed", "BAAI"]
 
         llm_set = set([m["llm_name"] for m in llms])
         for o in objs:
