@@ -201,7 +201,6 @@ export const useSubmitVolcEngine = () => {
   };
 };
 
->>>>>>> f900e432f37219db71810dcd3cac29068d166913
 export const useHandleDeleteLlm = (llmFactory: string) => {
   const deleteLlm = useDeleteLlm();
   const showDeleteConfirm = useShowDeleteConfirm();
